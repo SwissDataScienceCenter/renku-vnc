@@ -4,42 +4,43 @@
 
 WORK IN PROGRESS.
 
-Our objective is to run X11 desktop and applications inside a jupyterlab based docker container, and display them in an HTML canvas severed through our jupyterlab interface or full screen. Because the container is deployed and managed by renkulab, whatever method we use must piggy back on the existing jupyter lab connection.
+Our objective is to run an X11 desktop and applications inside a jupyterlab based docker container, and display them in an HTML canvas present through our jupyterlab interface or full screen. Because the container is deployed and managed by renkulab, whatever method we use must piggy back on the existing jupyter connection.
 
 A VNC-based approach with a javascript RFB to HTML5 renderer seems to be the easiest solution.
 
 We try and compare the methods below.
 
-In all configurations we use [novnc](https://github.com/novnc/noVNC) in order to render the RFB events into HTML on the browser side. All are served behind a [Jupyter server proxy](https://github.com/jupyterhub/jupyter-server-proxy) inside a [Docker]() container, except for the nginx approach which is used for debugging purpose.
+In all configurations we use [novnc](https://github.com/novnc/noVNC) in order to render the RFB events into HTML on the browser side. All are served behind a [Jupyter server proxy](https://github.com/jupyterhub/jupyter-server-proxy) inside a [Docker](http://docker.com) container, except for the nginx approach which is used only for debugging purpose.
 
 
-**1. Jupyter server proxy - novnc+websockify - x11vnc - xvbuf**
+**1. Jupyter server proxy - novnc+websockify - x11vnc - xvbf**
 * Advantages
   - It just works
-  - Xvbuf built on native OS distributor's X.org/X11 implementation, for better compatibility
+  - Xvbf built on native OS distributor's X.org/X11 implementation, for better compatibility
 * Disadvantages
   - overhead of x11vnc on top of xvbuf (to be confirmed in this exercise)
   - More proxies than required? websockify may not be necessary if libvncserver, on which x11vnc is built, supports websockets
   
-**2. Jupyter server proxy - novnc - x11vnc - xvbuf**
+**2. Jupyter server proxy - novnc - x11vnc - xvbf**
 * Advantages
   - It is supposed to work
-  - Xvbuf built on native OS distributor's X.org/X11 implementation, for better compatibility
-  - Take advantage of libvncserver's support for websockets to get away without websockify
+  - Xvbf built on native OS distributor's X.org/X11 implementation, for better compatibility
+  - Take advantage of libvncserver's support for websockets and get away without the need for websockify
 * Disadvantages
-  - overhead of x11vnc on top of xvbuf (to be confirmed in this exercise)
+  - overhead of x11vnc on top of xvbf (to be confirmed in this exercise)
 * Caveats
-  - Libvncserver supports websocket, but but [see novnc's issue](https://github.com/novnc/noVNC/issues/1310))
+  - Libvncserver theoretically supports websocket, but [see novnc's issue 1310](https://github.com/novnc/noVNC/issues/1310)), and all related issues.
   
 **3. Jupyter server proxy - novnc+websockify - TigerVNC (Xvnc)**
 * Advantages
   - TigerVNC (Xvnc) built on native OS distributor's X.org/X11 implementation, for better compatibility
-  - Remove overhead of separate x virtual frame buffer xvfb and vnc server, TigerVNC offers two in one
+  - Remove overhead of separate x virtual frame buffer xvfb and vnc server, TigerVNC combines both in one
 * Disavantages
   - No support for websockets? can't get away without overhead of intermediate websockify
   
-**4. In house solution based on customised versions of above component, optimised for our use case**
-After we learn more about the above configurations, we may find out that we prefer xdp.
+**4. In-house solution based on customised versions of above component, optimised for our use case**
+
+After investigating all the above configurations, we may find out that we prefer XRDP after all, or that we are better off forking our own VNC server implementation or novnc-like solution that is cusomized for our needs.
   
 **5. Nginx**
 We include an nginx configuration for debugging purpose only.
@@ -52,7 +53,7 @@ TODO - break down section below in separate folders
 
 Can be RUN in Dockerfile, e.g. from a renku base image without running jupyterlab.
 
-This configuration is only for debugging purpose, in order to serve the novnc js code and proxyfy the websocket connection through a same port.
+This configuration is only for debugging purpose, in order to serve the novnc js code and proxify the websocket connection through a same port.
 
 * [Install nginx](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/) as root or sudoer
 ```
@@ -137,17 +138,17 @@ You can now access the vnc page on `localhost:8888/vnc.html?path=/ws/`, however 
 
 * **Notes**:
     - Port 8888 is used to connect from the host computer to nginx listening on port 8888 inside the container
-    - Nginx services container's /var/www/noVNC files under URL location / and websockets under URL location /ws/
-    - Websockets are proxied by nginx to service listening on port 5901 inside container, which should be the VNC supporting the websocket RFB protocol.
+    - Inside container, nginx maps / locations to files under /var/www/noVNC, and /ws/ locations to websocket listening on localhost:5901
+    - A VNC service supporting the websocket RFB protocol must listen on port 5901 inside the container.
     
 * **Notes**:
-    - This is WIP - novnc's RFB client connects to x11vnc service which dump logs that appear normal, however connection hangs and timesout - it could be related to the libvncserver bugs mentioned above (there are several references to it), however updating libvncserver as recommended as a kick fix did not seem to help. This is under investigation while I am reviewing the logs 
+    - This is WIP - novnc's RFB client can connect to x11vnc service which dumps protocol handshake logs that appear normal. However connection hangs and times out - it could be related to the libvncserver bugs mentioned above (there are several references to it). Updating libvncserver as recommended as a quick fix did not seem to help. This is under investigation while I am reviewing the logs 
 
-### 2.2 Jupyter server proxy - novnc+websockify - x11vnc - xvbuf**
+### 2.2 Jupyter server proxy - novnc+websockify - x11vnc - xvbuf
 
 Can be RUN in Dockerfile.
 
-* Install x11vnc, Xvbuf, and a X-session/Window Manager (e.g. openbox, fluxbox, or xfce4)
+* Install x11vnc, Xvbf, and a X-session/Window Manager (e.g. openbox, fluxbox, or xfce4)
 
 Note: we are only aiming for a functional windows environment that can be used for testing purpose,
 therefore this install lacks the obvious openbox's bells and whistles customizations.
@@ -195,4 +196,4 @@ FD_OPTS="-nolisten tcp -c r" FD_GEOM=1024x768x24 FD_PROG=/usr/bin/openbox x11vnc
 docker run --rm -ti -p 8888:8888 <image> jupyter lab --ip=0.0.0.0
 ```
 
-* Open a browser at the specified URL (with the token), and replace the URL's path by `/lab/proxy/6081?vnc.html&path=/lab/proxy/6081/`
+* Open a browser at the specified URL (with the token), and replace the URL's path by `/lab/proxy/6081/vnc.html?path=/lab/proxy/6081/`
