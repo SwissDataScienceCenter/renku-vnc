@@ -12,39 +12,56 @@ We try and compare the methods below.
 
 In all configurations we use [novnc](https://github.com/novnc/noVNC) in order to render the RFB events into HTML on the browser side. All are served behind a [Jupyter server proxy](https://github.com/jupyterhub/jupyter-server-proxy) inside a [Docker](http://docker.com) container, except for the nginx approach which is used only for debugging purpose.
 
-
+----
 **1. Jupyter server proxy - novnc+websockify - x11vnc - xvbf**
-* Advantages
-  - It just works
-  - Xvbf built on native OS distributor's X.org/X11 implementation, for better compatibility
-* Disadvantages
-  - overhead of x11vnc on top of xvbuf (to be confirmed in this exercise)
-  - More proxies than required? websockify may not be necessary if libvncserver, on which x11vnc is built, supports websockets
 
 ![ws-x11vnc-xvfb](/svg/ws-x11vnc-xvfb-diag.svg)
 
+* **Advantages**
+  - It just works
+  - Xvbf built on native OS distributor's X.org/X11 implementation, for better compatibility
+
+* **Disadvantages**
+  - overhead of x11vnc on top of xvbuf (to be confirmed in this exercise)
+  - More proxies than required? websockify may not be necessary if libvncserver, on which x11vnc is built, supports websockets
+
+----
 **2. Jupyter server proxy - novnc - x11vnc - xvbf**
-* Advantages
+
+![x11vnc-xvfb](/svg/x11vnc-xvfb-diag.svg)
+
+* **Advantages**
+
   - It is supposed to work
   - Xvbf built on native OS distributor's X.org/X11 implementation, for better compatibility
   - Take advantage of libvncserver's support for websockets and get away without the need for websockify
-* Disadvantages
+
+* **Disadvantages**
   - overhead of x11vnc on top of xvbf (to be confirmed in this exercise)
-* Caveats
+
+* **Caveats**
   - Libvncserver theoretically supports websocket, but [see novnc's issue 1310](https://github.com/novnc/noVNC/issues/1310)), and all related issues.
-  
+
+----
 **3. Jupyter server proxy - novnc+websockify - TigerVNC (Xvnc)**
-* Advantages
+
+![ws-xvnc](/svg/ws-xvnc-diag.svg)
+
+* **Advantages**
   - TigerVNC (Xvnc) built on native OS distributor's X.org/X11 implementation, for better compatibility
   - Remove overhead of separate x virtual frame buffer xvfb and vnc server, TigerVNC combines both in one
-* Disavantages
+
+* **Disavantages**
   - No support for websockets? can't get away without overhead of intermediate websockify
-  
+
+----
 **4. In-house solution based on customised versions of above component, optimised for our use case**
 
 After investigating all the above configurations, we may find out that we prefer XRDP after all, or that we are better off forking our own VNC server implementation or novnc-like solution that is cusomized for our needs.
-  
+
+----
 **5. Nginx**
+
 We include an nginx configuration for debugging purpose only.
 
 ## 2. Implementations details
