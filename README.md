@@ -62,7 +62,9 @@ After investigating all the above configurations, we may find out that we prefer
 ----
 **5. Nginx**
 
-We include an nginx configuration for debugging purpose only.
+![nginx-vnc](/svg/nginx-vnc-diag.svg)
+
+We include this nginx configuration for debugging purpose only. So that we can verify the Docker container with the VNC stack outside the renkulab and jupyterlab context.
 
 ## 2. Implementations details
 
