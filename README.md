@@ -20,7 +20,9 @@ In all configurations we use [novnc](https://github.com/novnc/noVNC) in order to
 * Disadvantages
   - overhead of x11vnc on top of xvbuf (to be confirmed in this exercise)
   - More proxies than required? websockify may not be necessary if libvncserver, on which x11vnc is built, supports websockets
-  
+
+![ws-x11vnc-xvfb](/svg/ws-x11vnc-xvfb-diag.svg)
+
 **2. Jupyter server proxy - novnc - x11vnc - xvbf**
 * Advantages
   - It is supposed to work
