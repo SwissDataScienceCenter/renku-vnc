@@ -86,7 +86,7 @@ sudo apt-get update
 sudo apt-get install nginx
 ```
 
-If _If a W: GPG error: https://nginx.org/packages/ubuntu xenial Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY $key_:
+If _If a W: GPG error: https://nginx.org/packages/ubuntu xenial Release: The following signatures couldn't be verified because the public key is not available: NO PUBKEY $key_:
 
 Take note of $key, and replacing $key by its proper value, run
 ```
@@ -155,24 +155,24 @@ server {
 
 * Run `service nginx restart` inside the container to start the ngnix service
 
-You can now access the vnc page on `localhost:8888/vnc.html?path=/ws/`, however there is no VNC service to connect to on 5901. See the methods below in order to run the service (without the jupyter server proxy).
+You can now access the vnc page on `localhost:8888/vnc.html?path=/ws/`. There must be a VNC service (RFB protocol) with websocket support listening on 5901. See the methods below in order to run the service (without the jupyter server proxy).
 
 * **Notes**:
-    - Port 8888 is used to connect from the host computer to nginx listening on port 8888 inside the container
-    - Inside container, nginx maps / locations to files under /var/www/noVNC, and /ws/ locations to websocket listening on localhost:5901
+    - Port 8888 is used to connect from the host computer to nginx listening on port 8888 inside the docker container
+    - Inside the container, nginx maps / locations to files under /var/www/noVNC, and streams the /ws/ location to localhost:5901
     - A VNC service supporting the websocket RFB protocol must listen on port 5901 inside the container.
     
 * **Notes**:
-    - This is WIP - novnc's RFB client can connect to x11vnc service which dumps protocol handshake logs that appear normal. However connection hangs and times out - it could be related to the libvncserver bugs mentioned above (there are several references to it). Updating libvncserver as recommended as a quick fix did not seem to help. This is under investigation while I am reviewing the logs 
+    - This is WIP - novnc's RFB client can connect to x11vnc service which dumps protocol handshake logs that appear normal. However connection hangs and times out - it could be related to the libvncserver bugs mentioned above (there are several references to it). Updating libvncserver as recommended as a quick fix did not seem to help. This is under investigation while I am reviewing the logs.
 
 ### 2.2 Jupyter server proxy - novnc+websockify - x11vnc - xvbuf
 
 Can be RUN in Dockerfile.
 
-* Install x11vnc, Xvbf, and a X-session/Window Manager (e.g. openbox, fluxbox, or xfce4)
+* Install x11vnc, Xvbf, and a lightweight Window or Desktop Manager (e.g. openbox, fluxbox, lxde/lxqt or xfce4)
 
-Note: we are only aiming for a functional windows environment that can be used for testing purpose,
-therefore this install lacks the obvious openbox's bells and whistles customizations.
+Note: we are only aiming for a functional windows or desktop environment that can be used for testing purpose,
+therefore this install lacks the obvious bells and whistles customizations.
 
 ```
 apt-get update \
@@ -218,3 +218,4 @@ docker run --rm -ti -p 8888:8888 <image> jupyter lab --ip=0.0.0.0
 ```
 
 * Open a browser at the specified URL (with the token), and replace the URL's path by `/lab/proxy/6081/vnc.html?path=/lab/proxy/6081/`
+
