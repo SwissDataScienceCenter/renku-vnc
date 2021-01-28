@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+main() {
+    set -euC
+    local -i wsport=${1:-6080}
+    local -i vncport=5901
+
+    rm -f /tmp/novnc.log /tmp/x11vnc.log
+
+    # -bg not working?
+    (x11vnc -env FD_OPTS="-nolisten tcp -c r" \
+            -env FD_GEOM="1024x768x24" \
+            -env FD_PROG="/usr/bin/startfluxbox" \
+            -display WAIT:cmd=FINDCREATEDISPLAY-Xvfb \
+            -no6 \
+            -noipv6 -noxdamage -noxfixes -noxrecord \
+            -rfbport ${vncport} \
+            -ping 5 \
+            -repeat \
+            -forever -nevershared -nopw -o /tmp/x11vnc.log & ) &
+    (/usr/share/novnc/utils/launch.sh --vnc localhost:${vncport} --listen ${wsport} > /tmp/novnc.log 2>&1 & ) &
+}
+
+main "${@}"

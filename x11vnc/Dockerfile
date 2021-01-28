@@ -5,36 +5,38 @@ FROM ${RENKU_BASE_IMAGE}
 #################################################################
 USER root
 
-# Common
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        #openssl \
-        #ca-certificates \
         xterm \
         xvfb \
         x11vnc \
-        novnc \
         net-tools \
+    && mkdir -p /usr/share/novnc \
+    && git clone https://github.com/novnc/noVNC /tmp/novnc \
+    && mv /tmp/novnc/app /tmp/novnc/utils /tmp/novnc/core /tmp/novnc/vendor /tmp/novnc/package.json /tmp/novnc/*.html /usr/share/novnc \
+    && mkdir -p /usr/share/novnc/utils/websockify \
+    && git clone https://github.com/novnc/websockify /tmp/ws \
+    && mv /tmp/ws/websockify /tmp/ws/run /tmp/ws/websockify.py /usr/share/novnc/utils/websockify \
+    && sed -i -e 's,"websockify","vnc/",g' /usr/share/novnc/vnc.html \
+    && sed -i -e "s,'websockify','vnc/',g" /usr/share/novnc/app/ui.js \
+    && sed -i -e "s,'websockify','vnc/',g" /usr/share/novnc/vnc_lite.html \
+    && chmod a+rX -R /usr/share/novnc \
     && apt-get autoremove --purge \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* \
     && find /var/log -type f -exec cp /dev/null \{\} \;
 
-#################################################################
-# Custom VNC - pick at least one,
-# and comment out what you don't want
-##
-USER root
+COPY --chown=root:root startvnc /
 
 #################################################################
 # Custom X-session/window manager - pick at least one,
 # and comment out what you don't want.
-# Modify configs as needed.
+# Modify startvnc as needed so that it uses the selected WM.
 ##
 
 #----------------------------------------------------------------
-# openbox (100MB)
+# openbox
 #----------------------------------------------------------------
 # RUN apt-get install -y \
 #         openbox \
@@ -45,7 +47,7 @@ USER root
 #     && find /var/log -type f -exec cp /dev/null \{\} \;
 
 #----------------------------------------------------------------
-# fluxbox (10MB)
+# fluxbox
 #----------------------------------------------------------------
 RUN apt-get update && apt-get install -y \
         fluxbox \
@@ -57,7 +59,7 @@ RUN apt-get update && apt-get install -y \
     && find /var/log -type f -exec cp /dev/null \{\} \;
 
 #----------------------------------------------------------------
-# xfce4 (0.5GB)
+# xfce4
 #----------------------------------------------------------------
 # RUN apt-get install -y \
 #         xfce4 \
@@ -67,6 +69,26 @@ RUN apt-get update && apt-get install -y \
 #     && rm -rf /tmp/* \
 #     && find /var/log -type f -exec cp /dev/null \{\} \;
 
+# Install the jupyter extensions
+USER ${NB_USER}
+
+RUN conda install jupyter-server-proxy -c conda-forge \
+    && jupyter labextension install @jupyterlab/server-proxy \
+    && conda clean -y --all \
+    && echo "c.ServerProxy.servers = {\n\
+    'vnc': {\n\
+        'command': ['/startvnc', '{port}'],\n\
+        'timeout' : 10,\n\
+        'absolute_url': False,\n\
+        'new_browser_tab': True,\n\
+        'launcher_entry' :  {\n\
+            'enabled': True,\n\
+            'title': 'VNC'\n\
+        }\n\
+    }\n\
+}" >> ~/.jupyter/jupyter_notebook_config.py
+
+
 
 # Install the python dependencies
 USER ${NB_USER}
@@ -74,8 +96,6 @@ USER ${NB_USER}
 COPY --chown=${NB_USER}:${NB_USER} requirements.txt environment.yml /tmp/
 RUN conda env update -q -f /tmp/environment.yml && \
     /opt/conda/bin/pip install -q -r /tmp/requirements.txt && \
-    conda install jupyter-server-proxy -c conda-forge && \
-    jupyter labextension install @jupyterlab/server-proxy && \
     rm -f /tmp/requirements.txt -f /tmp/environment.yml && \
     conda clean -y --all && \
     conda env export -n "root"
