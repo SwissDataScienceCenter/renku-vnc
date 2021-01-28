@@ -24,6 +24,8 @@ In all configurations we use [novnc](https://github.com/novnc/noVNC) in order to
 * **Disadvantages**
   - overhead of x11vnc on top of xvbuf (to be confirmed in this exercise)
   - More proxies than required? websockify may not be necessary if libvncserver, on which x11vnc is built, supports websockets
+  
+* [Implementation details](./x11vnc/README.md)
 
 ----
 **2. Jupyter server proxy - novnc - x11vnc - xvbf**
@@ -68,7 +70,7 @@ We include this nginx configuration for debugging purpose only. So that we can v
 
 ## 2. Implementations details
 
-TODO - break down section below in separate folders
+TODO - move section below to separate folders for debugging with Nginx
 
 ### 2.1 Nginx
 
@@ -165,57 +167,5 @@ You can now access the vnc page on `localhost:8888/vnc.html?path=/ws/`. There mu
 * **Notes**:
     - This is WIP - novnc's RFB client can connect to x11vnc service which dumps protocol handshake logs that appear normal. However connection hangs and times out - it could be related to the libvncserver bugs mentioned above (there are several references to it). Updating libvncserver as recommended as a quick fix did not seem to help. This is under investigation while I am reviewing the logs.
 
-### 2.2 Jupyter server proxy - novnc+websockify - x11vnc - xvbuf
 
-Can be RUN in Dockerfile.
-
-* Install x11vnc, Xvbf, and a lightweight Window or Desktop Manager (e.g. openbox, fluxbox, lxde/lxqt or xfce4)
-
-Note: we are only aiming for a functional windows or desktop environment that can be used for testing purpose,
-therefore this install lacks the obvious bells and whistles customizations.
-
-```
-apt-get update \
-    && apt-get install -y --no-install-recommends \
-       xvfb \
-       x11vnc \
-       net-tools \
-       openbox \
-       xterm \
-    && apt-get autoremove --purge \
-    && apt-get clean
-```
-
-* Install novnc and its sister project websockify
-```
-cd /var/www
-git clone https://github.com/novnc/noVNC.git
-rm -rf noVNC/.git
-git clone https://github.com/novnc/websockify.git /var/www/noVNC/utils/
-rm -rf noVNC/utils/websockify/.git
-```
-
-* Install and activate the [Jupyter server proxy](https://github.com/jupyterhub/jupyter-server-proxy) extension
-```
-conda install jupyter-server-proxy -c conda-forge
-jupyter labextension install @jupyterlab/server-proxy
-```
-
-* Optionally create startup scripts for xvfb, x11vnc and novnc
-
-This can be invoked by /entrypoint.sh, possibly via supervisord or can be done manually for testing purposes.
-Keep in mind however that we don't have root/sudo priviledges in containers started by renkulab. Our startup script must work as a powerless $NB_USER userid.
-
-```
-FD_OPTS="-nolisten tcp -c r" FD_GEOM=1024x768x24 FD_PROG=/usr/bin/openbox x11vnc -display WAIT:cmd=FINDCREATEDISPLAY-Xvfb -noipv6 -noxrecord -rfbport 5901 -ping 5 -forever -nopw
-/var/www/websockify/
-/var/www/noVNC/utils/launch.sh --listen 6081 --vnc localhost:5901
-```
-
-* Build, and run the image in a container
-```
-docker run --rm -ti -p 8888:8888 <image> jupyter lab --ip=0.0.0.0
-```
-
-* Open a browser at the specified URL (with the token), and replace the URL's path by `/lab/proxy/6081/vnc.html?path=/lab/proxy/6081/`
 
