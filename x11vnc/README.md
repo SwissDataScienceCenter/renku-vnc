@@ -1,6 +1,6 @@
 # renku-vnc
 
-## 1 Jupyter Server Proxy, NoVNC, Websockify, x11vnc, Xvbf or Xdummy
+## 1 Jupyter Server Proxy, NoVNC, Websockify, x11vnc, Xvfb or Xdummy
 
 ### 1.1 Usage
 
@@ -42,7 +42,7 @@ mv /tmp/ws/{websockify,run,websockify.py} /usr/share/novnc/utils/websockify
 chmod a+rX -R /usr/share/novnc
 ```
 
-* Make `vnc/` the default path for NoVNC's websockify. Note that the '/' is required. Using `websockify` instead of `vnc` in the c.ServerProxy.servers configuration below to avoid this modification would not be sufficient.
+* Make `vnc/` the default path for NoVNC's websockify. Note that the '/' is required. Using `websockify` instead of `vnc` in the c.ServerProxy.servers configuration below to avoid this modification would not work.
 
 ```
 sed -i -e 's,"websockify","vnc/",g' /usr/share/novnc/vnc.html
@@ -52,7 +52,7 @@ sed -i -e "s,'websockify','vnc/',g" /usr/share/novnc/vnc_lite.html
 * Soft-link vnc.html to index.html so that we land on vnc.html from the jupyter lab's VNC launcher
 
 ```
-ln -s /usr/share/novnc/vnc.html /usr/share/novnc/index.html \
+ln -s /usr/share/novnc/vnc.html /usr/share/novnc/index.html
 ```
 
 * Install and activate the [Jupyter server proxy](https://github.com/jupyterhub/jupyter-server-proxy) extension
@@ -62,7 +62,7 @@ conda install jupyter-server-proxy -c conda-forge
 jupyter labextension install @jupyterlab/server-proxy
 ```
 
-* Copy the startup scripts into `/starvnc` to start xvfb, x11vnc and novnc:
+* Copy and paste the startup scripts into `/starvnc` to start xvfb, x11vnc and novnc:
 
 ```
 (x11vnc -env FD_OPTS="-nolisten tcp -c r" \
@@ -94,7 +94,7 @@ Keep in mind however that we don't have root/sudo priviledges in containers star
 
 * Configure the jupyter lab server proxy extension to automatically invoke the `/startvnc` script when accessing the `vnc/` path on the jupyter lab's URL.
 
-In `~/.jupyter/jupyter_notebook_config.py` add the lines:
+In `~/.jupyter/jupyter_notebook_config.py` copy paste the lines:
 
 ```
 c.ServerProxy.servers = {
@@ -109,6 +109,8 @@ c.ServerProxy.servers = {
      }
 }
 ```
+
+Jupyter proxy server will specify the `{port}` number that the VNC server or websockify proxy must use to listen to.
 
 It is possible to also specify an icon for the VNC launcher in `launcher_entry`.
 See the [Jupyter server proxy documentation](https://jupyter-server-proxy.readthedocs.io/en/latest/server-process.html) for details.
