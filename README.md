@@ -13,7 +13,9 @@ We try and compare the methods below.
 In all configurations we use [novnc](https://github.com/novnc/noVNC) in order to render the RFB events into HTML on the browser side. All are served behind a [Jupyter server proxy](https://github.com/jupyterhub/jupyter-server-proxy) inside a [Docker](http://docker.com) container, except for the nginx approach which is used only for debugging purpose.
 
 ----
-**1. Jupyter server proxy - novnc+websockify - x11vnc - xvbf**
+## 2. Configurations
+
+#### 2.1 Jupyter server proxy - novnc+websockify - x11vnc - xvbf
 
 ![ws-x11vnc-xvfb](/svg/ws-x11vnc-xvfb-diag.svg)
 
@@ -25,10 +27,10 @@ In all configurations we use [novnc](https://github.com/novnc/noVNC) in order to
   - overhead of x11vnc on top of xvbuf (to be confirmed in this exercise)
   - More proxies than required? websockify may not be necessary if libvncserver, on which x11vnc is built, supports websockets
   
-* [Implementation details](./x11vnc/README.md)
+* [Implementation details](/x11vnc/)
 
 ----
-**2. Jupyter server proxy - novnc - x11vnc - xvbf**
+#### 2.2 Jupyter server proxy - novnc - x11vnc - xvbf
 
 ![x11vnc-xvfb](/svg/x11vnc-xvfb-diag.svg)
 
@@ -45,7 +47,7 @@ In all configurations we use [novnc](https://github.com/novnc/noVNC) in order to
   - Libvncserver theoretically supports websocket, but [see novnc's issue 1310](https://github.com/novnc/noVNC/issues/1310)), and all related issues.
 
 ----
-**3. Jupyter server proxy - novnc+websockify - TigerVNC (Xvnc)**
+#### 2.3 Jupyter server proxy - novnc+websockify - TigerVNC (Xvnc)
 
 ![ws-xvnc](/svg/ws-xvnc-diag.svg)
 
@@ -56,19 +58,21 @@ In all configurations we use [novnc](https://github.com/novnc/noVNC) in order to
 * **Disavantages**
   - No support for websockets? can't get away without overhead of intermediate websockify
 
-* [Implementation details](./xvnc4/README.md)
+* [Implementation details](/xvnc4/)
 
 ----
-**4. In-house solution based on customised versions of above component, optimised for our use case**
+#### 2.4 In-house solution
 
-After investigating all the above configurations, we may find out that we prefer XRDP after all, or that we are better off forking our own VNC server implementation or novnc-like solution that is cusomized for our needs.
+After investigating all the above configurations, we may find out that we prefer XRDP after all, or that we are better off forking our own VNC server implementation or novnc-like solution, optimised for our use case that is cusomized for our needs.
 
 ----
-### 2 Nginx
+## 3. Development
+
+#### 3.1 Nginx
 
 ![nginx-vnc](/svg/nginx-vnc-diag.svg)
 
-We include this nginx configuration for debugging purpose only. It can be used to test the Docker container with the VNC stack outside the renkulab or jupyterlab context, and to serve the novnc js code and proxify the websocket connection through a same port.
+We include this nginx configuration for testing and debugging the above configurations. It can be used to test the Docker container with the VNC stack outside the renkulab or jupyterlab context, and to serve the novnc js code and proxify the websocket connection through a same port.
 
 * [Install nginx](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/) as root or sudoer
 ```
@@ -159,8 +163,8 @@ You can now access the vnc page on `localhost:8888/vnc.html?path=/ws/`. There mu
 * **Notes**:
     - This is WIP - novnc's RFB client can connect to x11vnc service which dumps protocol handshake logs that appear normal. However connection hangs and times out - it could be related to the libvncserver bugs mentioned above (there are several references to it). Updating libvncserver as recommended as a quick fix did not seem to help. This is under investigation while I am reviewing the logs.
 
-
-### 3. Xdummy option
+----
+#### 3.2. Substituting Xdummy for Xvfb
 
 It is possible to configure the Dockerfile to use the Xdummy as the headless X server instead of Xvfb. This is mostly applicable to the x11vnc option, since TigerVNC/Xvnc include the X server.
 
@@ -190,11 +194,18 @@ You must provide the /etc/xorg.conf configuration file. See xpra's [xorg.conf](h
 xrandr --output default --mode 1280x1024
 ```
 
-
-## 4. Weston in X Wayland
+----
+#### 3.3. Weston in Wayland?
 
 We do not consider Wayland for our Docker container yet.
 
 This is because wayland needs to run an X server behind the scene in order to process client inputs that it can't understand, resulting in a higher memory and CPU usage.
+
+----
+#### 3.4. TODO
+
+* We did not try to optimize of the X server and VNC server parameter configuration for better performance or stability. Our first focus is to achieve a usable configuration.
+* Clipboard cut/paste is currently not working (tested on macos).
+
 
 
