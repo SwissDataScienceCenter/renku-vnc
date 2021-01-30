@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+main() {
+    set -euC
+    local -ri wsport=${1:-6080}
+    local -i  display
+
+    for display in {20..99}; do
+            if [[ ! -e /tmp/.X${display} && ! -e /tmp/.X11-unix/X${display} ]]; then
+                    break ;
+            fi
+    done
+
+    local -ri vncport=$((5900+${display}))
+
+    rm -f /tmp/novnc.log /tmp/xvnc4.log
+
+    (Xvnc4 :${display} \
+            -geometry 1024x768 \
+            -depth 24 \
+            -c r \
+            -rfbport ${vncport} \
+            -SecurityTypes None \
+            -xinerama \
+            -localhost \
+            > /tmp/xvnc4.log 2>&1 &) &
+    sleep 1
+    (/usr/share/novnc/utils/launch.sh --vnc localhost:${vncport} --listen ${wsport} > /tmp/novnc.log 2>&1 &) &
+    sleep 1
+    (DISPLAY=:${display} /usr/bin/startfluxbox &) &
+}
+
+main "${@}"

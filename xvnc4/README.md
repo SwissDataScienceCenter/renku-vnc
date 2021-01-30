@@ -1,33 +1,40 @@
 # renku-vnc
 
-## 1 Jupyter Server Proxy, NoVNC, Websockify, x11vnc, Xvbf or Xdummy
+## 2 Jupyter Server Proxy, NoVNC, Websockify, Xvnc4
 
-### 1.1 Usage
+### 2.1 Usage
 
 * Build the image in this folder: `docker build -t renku-vnc .`
 
 * Start the docker container: `docker run --rm -it -p 8888:8888 renku-vnc jupyter lab --ip=0.0.0.0`
 
-* Access the vnc page on `localhost:8888/vnc/vnc.html`.
+* Access the vnc page on `localhost:8888/vnc`, or via the jupyter lab VNC launcher.
 
-### 1.2 Implementation details
+### 2.2 Implementation details
 
-* Install X virtual frame buffer (Xvfb), the VNC server (x11vnc), and net-tools (netstat)
+* Install the VNC server (xvnc4), x terminal, xfonts-base, and net-tools (netstat)
 
 ```
 apt-get update
-apt-get install -y --no-install-recommends xterm xvfb x11vnc net-tools
+apt-get install -y --no-install-recommends vnc4server x11-server-utils xterm xfonts-base net-tools
 ```
 
-* Install the window manager, and X utilities (xset). We use fluxbox, but other choices such as openbox, xfce4 are also possible.
+xfonts-base is a minimum recommendation so that Xvnc4 does not fail with the error
+
+```
+Fatal server error:
+could not open default font 'fixed'
+```
+
+* Install the window manager, and X utilities (xrandr, xset). We use fluxbox, but other choices such as openbox, xfce4 are also possible.
 
 ```
 apt-get update
 apt-get install -y fluxbox x11-xserver-utils
 ```
 
-Note, we are only aiming for a functional windows or desktop environment that can be used for testing purpose,
-therefore this install lacks the obvious bells and whistles customizations. See the documentation on the available windows manager or full
+Note that we are only aiming for a functional windows or desktop environment that can be used for testing purpose.
+Therefore this install lacks the obvious bells and whistles customizations. See the documentation on the available windows manager or full
 fledge desktop managers for more information.
 
 * Install novnc and its sister project websockify from github
@@ -65,30 +72,29 @@ jupyter labextension install @jupyterlab/server-proxy
 * Copy the startup scripts into `/starvnc` to start xvfb, x11vnc and novnc:
 
 ```
-(x11vnc -env FD_OPTS="-nolisten tcp -c r" \
-            -env FD_GEOM="1024x768x24" \
-            -env FD_PROG="/usr/bin/startfluxbox" \
-            -display WAIT:cmd=FINDCREATEDISPLAY-Xvfb \
-            -no6 \
-            -noipv6 -noxdamage -noxfixes -noxrecord \
-            -rfbport ${vncport} \
-            -ping 5 \
-            -repeat \
-            -forever -nevershared -nopw -o /tmp/x11vnc.log & ) &
-(/usr/share/novnc/utils/launch.sh --vnc localhost:${vncport} --listen ${wsport} > /tmp/novnc.log 2>&1 & ) &
+(Xvnc4 :20
+        -geom 1024x768 \
+        -depth 24 \
+        -c r \
+        -rfbport ${vncport} \
+        -SecurityTypes None \
+        -xinerama \
+        -localhost \
+      > /tmp/xvnc4.log 2>&1 &) &
+sleep 1
+(/usr/share/novnc/utils/launch.sh --vnc localhost:${vncport} --listen ${wsport} > /tmp/novnc.log 2>&1 &) &
+sleep 1
+(/usr/bin/startfluxbox &) &
 ```
 
-The x11vnc server will automatically look for an available display, and start Xvfb to create one if none exists (-display argument).
-The environment variables `FD_OPTS` and `FD_GEOM` can be used to pass additional arguments to the Xvfb process.
+In the above, vncport is the RFB port on which the VNC server will be listening, and wsport is the port that the websockify proxy
+will listen to for connections forwared by the jupyter lab webproxy. Wsport can be set by the jupyter lab proxy and passed as
+an argument to the script (see the argument `{port}` below).
 
-Modify `FD_PROG` to start the window manager of your choice.
+All communications between the jupyter lab proxy and Xvnc4 are unencrypted and password-less (`-SecurityTypes None`)
+since they all happen inside the user's container, and external communications to the jupyter lab proxy endpoint are encrypted and protected by a token.
 
-X11vnc is configured to work in an endless loop (`-forever`) and allow a single client at the time (`-nevershared`), disconnecting
-existing clients when a new client (websockify proxy) connects.
-All communications between the jupyter lab proxy and Xvfb are unencrypted and password-less (`-nopw`) since they all happen inside the
-user's container and are protected to the jupyter lab proxy endpoint.
-
-See the Xvfb and x11vnc documentation for other tuning parameters.
+See the Xvnc4 documentation for other tuning parameters.
 
 Keep in mind however that we don't have root/sudo priviledges in containers started by renkulab. Our startup script must work as a powerless $NB_USER userid.
 

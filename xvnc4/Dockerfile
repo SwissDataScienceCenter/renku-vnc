@@ -7,9 +7,10 @@ USER root
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+        vnc4server \
+        x11-xserver-utils \
+        xfonts-base \
         xterm \
-        xvfb \
-        x11vnc \
         net-tools \
     && mkdir -p /usr/share/novnc \
     && git clone https://github.com/novnc/noVNC /tmp/novnc \
@@ -52,7 +53,6 @@ COPY --chown=root:root startvnc /
 #----------------------------------------------------------------
 RUN apt-get update && apt-get install -y \
         fluxbox \
-        x11-xserver-utils \
     && apt-get autoremove --purge \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
@@ -73,7 +73,7 @@ RUN apt-get update && apt-get install -y \
 # Install the jupyter extensions
 USER ${NB_USER}
 
-RUN conda install jupyter-server-proxy -c conda-forge \
+RUN conda install jupyter-server-proxy numpy -c conda-forge \
     && jupyter labextension install @jupyterlab/server-proxy \
     && conda clean -y --all \
     && echo "c.ServerProxy.servers = {\n\

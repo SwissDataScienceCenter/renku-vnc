@@ -3,7 +3,7 @@
 main() {
     set -euC
     local -i wsport=${1:-6080}
-    local -i vncport=5901
+    local -i vncport=5920
 
     rm -f /tmp/novnc.log /tmp/x11vnc.log
 
@@ -16,6 +16,7 @@ main() {
             -noipv6 -noxdamage -noxfixes -noxrecord \
             -rfbport ${vncport} \
             -ping 5 \
+            -localhost \
             -repeat \
             -forever -nevershared -nopw -o /tmp/x11vnc.log & ) &
     (/usr/share/novnc/utils/launch.sh --vnc localhost:${vncport} --listen ${wsport} > /tmp/novnc.log 2>&1 & ) &

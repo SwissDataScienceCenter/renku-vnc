@@ -56,27 +56,19 @@ In all configurations we use [novnc](https://github.com/novnc/noVNC) in order to
 * **Disavantages**
   - No support for websockets? can't get away without overhead of intermediate websockify
 
+* [Implementation details](./xvnc4/README.md)
+
 ----
 **4. In-house solution based on customised versions of above component, optimised for our use case**
 
 After investigating all the above configurations, we may find out that we prefer XRDP after all, or that we are better off forking our own VNC server implementation or novnc-like solution that is cusomized for our needs.
 
 ----
-**5. Nginx**
+### 2 Nginx
 
 ![nginx-vnc](/svg/nginx-vnc-diag.svg)
 
-We include this nginx configuration for debugging purpose only. So that we can verify the Docker container with the VNC stack outside the renkulab and jupyterlab context.
-
-## 2. Implementations details
-
-TODO - move section below to separate folders for debugging with Nginx
-
-### 2.1 Nginx
-
-Can be RUN in Dockerfile, e.g. from a renku base image without running jupyterlab.
-
-This configuration is only for debugging purpose, in order to serve the novnc js code and proxify the websocket connection through a same port.
+We include this nginx configuration for debugging purpose only. It can be used to test the Docker container with the VNC stack outside the renkulab or jupyterlab context, and to serve the novnc js code and proxify the websocket connection through a same port.
 
 * [Install nginx](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/) as root or sudoer
 ```
@@ -88,7 +80,7 @@ sudo apt-get update
 sudo apt-get install nginx
 ```
 
-If _If a W: GPG error: https://nginx.org/packages/ubuntu xenial Release: The following signatures couldn't be verified because the public key is not available: NO PUBKEY $key_:
+If you get the _GPG error: https://nginx.org/packages/ubuntu xenial Release: The following signatures couldn't be verified because the public key is not available: NO PUBKEY $key_:
 
 Take note of $key, and replacing $key by its proper value, run
 ```
@@ -157,15 +149,52 @@ server {
 
 * Run `service nginx restart` inside the container to start the ngnix service
 
-You can now access the vnc page on `localhost:8888/vnc.html?path=/ws/`. There must be a VNC service (RFB protocol) with websocket support listening on 5901. See the methods below in order to run the service (without the jupyter server proxy).
+You can now access the vnc page on `localhost:8888/vnc.html?path=/ws/`. There must be a VNC service (RFB protocol) with websocket support listening on 5901. See the methods presented above for the different types of VNC sever (without the jupyter server proxy).
 
 * **Notes**:
-    - Port 8888 is used to connect from the host computer to nginx listening on port 8888 inside the docker container
+    - In the example, port 8888 is used to connect from the host computer to nginx listening on port 8888 inside the docker container
     - Inside the container, nginx maps / locations to files under /var/www/noVNC, and streams the /ws/ location to localhost:5901
     - A VNC service supporting the websocket RFB protocol must listen on port 5901 inside the container.
     
 * **Notes**:
     - This is WIP - novnc's RFB client can connect to x11vnc service which dumps protocol handshake logs that appear normal. However connection hangs and times out - it could be related to the libvncserver bugs mentioned above (there are several references to it). Updating libvncserver as recommended as a quick fix did not seem to help. This is under investigation while I am reviewing the logs.
 
+
+### 3. Xdummy option
+
+It is possible to configure the Dockerfile to use the Xdummy as the headless X server instead of Xvfb. This is mostly applicable to the x11vnc option, since TigerVNC/Xvnc include the X server.
+
+* Install xorg's dummy server if it is not provided with x11vnc
+
+```
+apt-get install xserver-xorg-video-dummy
+```
+
+Create a `/usr/bin/Xdummy` executable (chmod 755) containing the following script
+
+```
+#!/usr/bin/env bash
+Xorg -noreset +extension GLX +extension RANDR +extension RENDER -logfile /tmp/20.log -config /etc/xorg.conf :20
+```
+
+You must provide the /etc/xorg.conf configuration file. See xpra's [xorg.conf](https://xpra.org/xorg.conf) as an example.
+
+* Modify the `-display` parameter of your x11vnc command so that it uses Xdummy (and falls back on Xvfb)
+```
+-display WAIT:cmd=FINDCREATEDISPLAY-Xdummy,Xvfb \
+```
+
+* Using this configuration the resizing should automatically be taken care of remotely by the server. If needed at runtime, you can manually adjust the default geometry with `xrandr`
+
+```
+xrandr --output default --mode 1280x1024
+```
+
+
+## 4. Weston in X Wayland
+
+We do not consider Wayland for our Docker container yet.
+
+This is because wayland needs to run an X server behind the scene in order to process client inputs that it can't understand, resulting in a higher memory and CPU usage.
 
 
