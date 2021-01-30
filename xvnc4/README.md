@@ -1,16 +1,18 @@
-# renku-vnc
+# RENKU-VNC
 
-## 2 Jupyter Server Proxy, NoVNC, Websockify, Xvnc4
+## 1 Jupyter Server Proxy, NoVNC, Websockify, Xvnc4
 
-### 2.1 Usage
+#### 1.1 Usage
 
 * Build the image in this folder: `docker build -t renku-vnc .`
 
 * Start the docker container: `docker run --rm -it -p 8888:8888 renku-vnc jupyter lab --ip=0.0.0.0`
 
-* Access the vnc page on `localhost:8888/vnc`, or via the jupyter lab VNC launcher.
+* Open the jupyter lab page at the URL provided in the output, or copy the token `http://127.0.0.1:8888/?token=...`
 
-### 2.2 Implementation details
+* Open the HTML vnc viewer on `localhost:8888/vnc`
+
+### 1.2 Implementation details
 
 * Install the VNC server (xvnc4), x terminal, xfonts-base, and net-tools (netstat)
 
@@ -19,7 +21,7 @@ apt-get update
 apt-get install -y --no-install-recommends vnc4server x11-server-utils xterm xfonts-base net-tools
 ```
 
-xfonts-base is a minimum recommendation so that Xvnc4 does not fail with the error
+xfonts-base is a minimum recommendation so that Xvnc4 does not fail with the error:
 
 ```
 Fatal server error:
@@ -94,7 +96,7 @@ an argument to the script (see the argument `{port}` below).
 All communications between the jupyter lab proxy and Xvnc4 are unencrypted and password-less (`-SecurityTypes None`)
 since they all happen inside the user's container, and external communications to the jupyter lab proxy endpoint are encrypted and protected by a token.
 
-See the Xvnc4 documentation for other tuning parameters.
+See the [Xvnc4]() documentation for other tuning parameters.
 
 Keep in mind however that we don't have root/sudo priviledges in containers started by renkulab. Our startup script must work as a powerless $NB_USER userid.
 
