@@ -1,16 +1,18 @@
-# renku-vnc
+# RENKU-VNC
 
 ## 1 Jupyter Server Proxy, NoVNC, Websockify, x11vnc, Xvfb or Xdummy
 
-### 1.1 Usage
+#### 1.1 Usage
 
 * Build the image in this folder: `docker build -t renku-vnc .`
 
 * Start the docker container: `docker run --rm -it -p 8888:8888 renku-vnc jupyter lab --ip=0.0.0.0`
 
-* Access the vnc page on `localhost:8888/vnc/vnc.html`.
+* Open the jupyter lab page at the URL provided in the output, or copy the token `http://127.0.0.1:8888/?token=...`
 
-### 1.2 Implementation details
+* Open the HTML vnc viewer on `localhost:8888/vnc`
+
+#### 1.2 Implementation details
 
 * Install X virtual frame buffer (Xvfb), the VNC server (x11vnc), and net-tools (netstat)
 
@@ -88,7 +90,7 @@ existing clients when a new client (websockify proxy) connects.
 All communications between the jupyter lab proxy and Xvfb are unencrypted and password-less (`-nopw`) since they all happen inside the
 user's container and are protected to the jupyter lab proxy endpoint.
 
-See the Xvfb and x11vnc documentation for other tuning parameters.
+See the [Xvfb](https://linux.die.net/man/1/xvfb) and [x11vnc](https://linux.die.net/man/1/x11vnc) documentation for other tuning parameters.
 
 Keep in mind however that we don't have root/sudo priviledges in containers started by renkulab. Our startup script must work as a powerless $NB_USER userid.
 
@@ -110,9 +112,10 @@ c.ServerProxy.servers = {
 }
 ```
 
-Jupyter proxy server will specify the `{port}` number that the VNC server or websockify proxy must use to listen to.
+Jupyter proxy server will specify the `{port}` number. This is the port on which the VNC server or novnc's websockify proxy must listen to.
 
 It is possible to also specify an icon for the VNC launcher in `launcher_entry`.
 See the [Jupyter server proxy documentation](https://jupyter-server-proxy.readthedocs.io/en/latest/server-process.html) for details.
+
 
 
