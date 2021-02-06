@@ -11,7 +11,7 @@ main() {
             fi
     done
 
-    local -ri vncport=$((5900+${display}))
+    local -ri vncport=$((5900+display))
 
     rm -f /tmp/novnc.log /tmp/xvnc4.log
 

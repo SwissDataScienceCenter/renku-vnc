@@ -174,7 +174,7 @@ It is possible to configure the Dockerfile to use the Xdummy as the headless X s
 apt-get install xserver-xorg-video-dummy
 ```
 
-Create a `/usr/bin/Xdummy` executable (chmod 755) containing the following script
+Create a `/usr/bin/Xdummy` executable (chmod 755) containing the following [script](http://www.karlrunge.com/x11vnc/Xdummy)
 
 ```
 #!/usr/bin/env bash
