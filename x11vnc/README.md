@@ -21,15 +21,15 @@ apt-get update
 apt-get install -y --no-install-recommends xterm xvfb x11vnc net-tools
 ```
 
-* Install the window manager, and X utilities (xset). We use fluxbox, but other choices such as openbox, xfce4 are also possible.
+* Install the window manager, and X utilities (xrandr, xset). We use fluxbox, but other choices such as openbox, xfce4 are also possible.
 
 ```
 apt-get update
 apt-get install -y fluxbox x11-xserver-utils
 ```
 
-Note, we are only aiming for a functional windows or desktop environment that can be used for testing purpose,
-therefore this install lacks the obvious bells and whistles customizations. See the documentation on the available windows manager or full
+Note that we are only aiming for a functional windows or desktop environment that can be used for testing purpose.
+Therefore this install lacks the obvious bells and whistles customizations. See the documentation on the available windows manager or full
 fledge desktop managers for more information.
 
 * Install novnc and its sister project websockify from github
@@ -44,18 +44,21 @@ mv /tmp/ws/{websockify,run,websockify.py} /usr/share/novnc/utils/websockify
 chmod a+rX -R /usr/share/novnc
 ```
 
-* Make `vnc/` the default path for NoVNC's websockify. Note that the '/' is required. Using `websockify` instead of `vnc` in the c.ServerProxy.servers configuration below to avoid this modification would not work.
+* Set the path for NoVNC's websockify.
 
 ```
-sed -i -e 's,"websockify","vnc/",g' /usr/share/novnc/vnc.html
-sed -i -e "s,'websockify','vnc/',g" /usr/share/novnc/app/ui.js
-sed -i -e "s,'websockify','vnc/',g" /usr/share/novnc/vnc_lite.html
+sed -i -e "s,'websockify',document.location.pathname.slice(1),g" /usr/share/novnc/app/ui.js
+sed -i -e "s,'websockify',document.location.pathname.slice(1),g" /usr/share/novnc/vnc_lite.html
 ```
-* Soft-link vnc.html to index.html so that we land on vnc.html from the jupyter lab's VNC launcher
+* Copy and soft-link vnc\_renku.html to index.html so that we land on it from the jupyter lab's VNC launcher
 
 ```
-ln -s /usr/share/novnc/vnc.html /usr/share/novnc/index.html
+COPY --chown=root:root vnc_renku.html /usr/share/novnc/
+RUN ln -s /usr/share/novnc/vnc.html /usr/share/novnc/index.html
 ```
+
+This file is a modified version of vnc\_lite.html, with support for renku - (1) it automatically set the path to NoVNC's websockify,
+(2) it shows the URL of the project's interactive environment in the status bar, and (3) it has support for full screen mode.
 
 * Install and activate the [Jupyter server proxy](https://github.com/jupyterhub/jupyter-server-proxy) extension
 
@@ -64,7 +67,7 @@ conda install jupyter-server-proxy -c conda-forge
 jupyter labextension install @jupyterlab/server-proxy
 ```
 
-* Copy and paste the startup scripts into `/starvnc` to start xvfb, x11vnc and novnc:
+* Copy the startup scripts into `/starvnc` to start xvfb, x11vnc and novnc:
 
 ```
 (x11vnc -env FD_OPTS="-nolisten tcp -c r" \

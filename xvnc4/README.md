@@ -12,7 +12,7 @@
 
 * Open the HTML vnc viewer on `localhost:8888/vnc`
 
-### 1.2 Implementation details
+#### 1.2 Implementation details
 
 * Install the VNC server (xvnc4), x terminal, xfonts-base, and net-tools (netstat)
 
@@ -51,18 +51,21 @@ mv /tmp/ws/{websockify,run,websockify.py} /usr/share/novnc/utils/websockify
 chmod a+rX -R /usr/share/novnc
 ```
 
-* Make `vnc/` the default path for NoVNC's websockify. Note that the '/' is required. Using `websockify` instead of `vnc` in the c.ServerProxy.servers configuration below to avoid this modification would not be sufficient.
+* Set the path for NoVNC's websockify.
 
 ```
-sed -i -e 's,"websockify","vnc/",g' /usr/share/novnc/vnc.html
-sed -i -e "s,'websockify','vnc/',g" /usr/share/novnc/app/ui.js
-sed -i -e "s,'websockify','vnc/',g" /usr/share/novnc/vnc_lite.html
+sed -i -e "s,'websockify',document.location.pathname.slice(1),g" /usr/share/novnc/app/ui.js
+sed -i -e "s,'websockify',document.location.pathname.slice(1),g" /usr/share/novnc/vnc_lite.html
 ```
-* Soft-link vnc.html to index.html so that we land on vnc.html from the jupyter lab's VNC launcher
+* Copy and soft-link vnc\_renku.html to index.html so that we land on it from the jupyter lab's VNC launcher
 
 ```
-ln -s /usr/share/novnc/vnc.html /usr/share/novnc/index.html \
+COPY --chown=root:root vnc_renku.html /usr/share/novnc/
+RUN ln -s /usr/share/novnc/vnc.html /usr/share/novnc/index.html
 ```
+
+This file is a modified version of vnc\_lite.html, with support for renku - (1) it automatically set the path to NoVNC's websockify,
+(2) it shows the URL of the project's interactive environment in the status bar, and (3) it has support for full screen mode.
 
 * Install and activate the [Jupyter server proxy](https://github.com/jupyterhub/jupyter-server-proxy) extension
 
@@ -102,7 +105,7 @@ Keep in mind however that we don't have root/sudo priviledges in containers star
 
 * Configure the jupyter lab server proxy extension to automatically invoke the `/startvnc` script when accessing the `vnc/` path on the jupyter lab's URL.
 
-In `~/.jupyter/jupyter_notebook_config.py` add the lines:
+In `~/.jupyter/jupyter_notebook_config.py` copy paste the lines:
 
 ```
 c.ServerProxy.servers = {
