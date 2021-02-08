@@ -7,11 +7,9 @@ USER root
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        openssl \
         vnc4server \
-        x11-xserver-utils \
         xfonts-base \
+        x11-xserver-utils \
         xterm \
         net-tools \
     && mkdir -p /usr/share/novnc \
@@ -20,10 +18,9 @@ RUN apt-get update \
     && mkdir -p /usr/share/novnc/utils/websockify \
     && git clone https://github.com/novnc/websockify /tmp/ws \
     && mv /tmp/ws/websockify /tmp/ws/run /tmp/ws/websockify.py /usr/share/novnc/utils/websockify \
-    && sed -i -e 's,"websockify","vnc/",g' /usr/share/novnc/vnc.html \
-    && sed -i -e "s,'websockify','vnc/',g" /usr/share/novnc/app/ui.js \
-    && sed -i -e "s,'websockify','vnc/',g" /usr/share/novnc/vnc_lite.html \
-    && ln -s /usr/share/novnc/vnc.html /usr/share/novnc/index.html \
+    && sed -i -e "s,'websockify',window.location.pathname.slice(1),g" /usr/share/novnc/app/ui.js \
+    && sed -i -e "s,'websockify',window.location.pathname.slice(1),g" /usr/share/novnc/vnc_lite.html \
+    && ln -fs /usr/share/novnc/vnc_renku.html /usr/share/novnc/index.html \
     && chmod a+rX -R /usr/share/novnc \
     && apt-get autoremove --purge \
     && apt-get clean \
@@ -31,6 +28,7 @@ RUN apt-get update \
     && rm -rf /tmp/* \
     && find /var/log -type f -exec cp /dev/null \{\} \;
 
+COPY --chown=root:root vnc_renku.html /usr/share/novnc/
 COPY --chown=root:root startvnc /
 
 #################################################################
