@@ -59,6 +59,7 @@ In all configurations we use [novnc](https://github.com/novnc/noVNC) in order to
   - No support for websockets? can't get away without overhead of intermediate websockify
 
 * [Implementation details](/xvnc4/)
+* [Try it on renkulab.io](https://renkulab.io/projects/erbou/renku-xvnc4)
 
 ----
 #### 2.4 In-house solution
