@@ -97,7 +97,6 @@ RUN conda install jupyter-server-proxy numpy -c conda-forge \
 COPY requirements.txt environment.yml /tmp/
 RUN conda env update -q -f /tmp/environment.yml && \
     /opt/conda/bin/pip install -q -r /tmp/requirements.txt && \
-    rm -f /tmp/requirements.txt -f /tmp/environment.yml && \
     conda clean -y --all && \
     conda env export -n "root"
 
