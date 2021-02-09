@@ -207,6 +207,7 @@ This is because wayland needs to run an X server behind the scene in order to pr
 
 * We did not try to optimize of the X server and VNC server parameter configuration for better performance or stability. Our first focus is to achieve a usable configuration.
 * Clipboard cut/paste is currently not working (tested on macos).
+* Consider using supervisord and start-stop-daemon
 
 
 

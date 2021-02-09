@@ -1,5 +1,6 @@
-#ARG RENKU_BASE_IMAGE=renku/renkulab-py:3.7-0.7.2
-ARG RENKU_BASE_IMAGE=renku/renkulab-py:3.7-9d3bfa3
+# For finding latest versions of the base image see
+# https://github.com/SwissDataScienceCenter/renkulab-docker
+ARG RENKU_BASE_IMAGE=renku/renkulab-py:3.7-0.7.3
 FROM ${RENKU_BASE_IMAGE}
 
 #################################################################
@@ -70,7 +71,7 @@ RUN apt-get update && apt-get install -y \
 #     && rm -rf /tmp/* \
 #     && find /var/log -type f -exec cp /dev/null \{\} \;
 
-# Install the jupyter extensions
+# install the jupyter extensions
 USER ${NB_USER}
 
 RUN conda install jupyter-server-proxy numpy -c conda-forge \
@@ -91,10 +92,9 @@ RUN conda install jupyter-server-proxy numpy -c conda-forge \
 
 
 
-# Install the python dependencies
-USER ${NB_USER}
+# install the python dependencies
 
-COPY --chown=${NB_USER}:${NB_USER} requirements.txt environment.yml /tmp/
+COPY requirements.txt environment.yml /tmp/
 RUN conda env update -q -f /tmp/environment.yml && \
     /opt/conda/bin/pip install -q -r /tmp/requirements.txt && \
     rm -f /tmp/requirements.txt -f /tmp/environment.yml && \
@@ -104,12 +104,10 @@ RUN conda env update -q -f /tmp/environment.yml && \
 # RENKU_VERSION determines the version of the renku CLI
 # that will be used in this image. To find the latest version,
 # visit https://pypi.org/project/renku/#history.
-ARG RENKU_VERSION=0.12.0
+ARG RENKU_VERSION=0.13.0
 
 ########################################################
 # Do not edit this section and do not add anything below
-
-USER ${NB_USER}
 
 RUN if [ -n "$RENKU_VERSION" ] ; then \
     pipx uninstall renku && \
