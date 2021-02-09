@@ -28,6 +28,7 @@ In all configurations we use [novnc](https://github.com/novnc/noVNC) in order to
   - More proxies than required? websockify may not be necessary if libvncserver, on which x11vnc is built, supports websockets
   
 * [Implementation details](/x11vnc/)
+* [Try it on renkulab.io](https://renkulab.io/gitlab/erbou/renku-x11vnc/)
 
 ----
 #### 2.2 Jupyter server proxy - novnc - x11vnc - xvbf
